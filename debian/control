@@ -2,8 +2,8 @@ Source: sendemail
 Section: mail
 Priority: optional
 Maintainer: Alejandro Garrido Mota <garridomota@gmail.com>
-Build-Depends: debhelper (>= 7)
-Standards-Version: 3.8.3
+Build-Depends: debhelper (>= 7.0.50~)
+Standards-Version: 3.9.1
 Homepage: http://www.caspian.dotconf.net/menu/Software/SendEmail/
 
 Package: sendemail
@@ -11,7 +11,7 @@ Architecture: all
 Depends: ${misc:Depends}, ${perl:Depends}
 Suggests: libio-socket-ssl-perl, libnet-ssleay-perl
 Description: lightweight, command line SMTP email client
- SendEmail is a lightweight, completly command line based, SMTP email
+ SendEmail is a lightweight, completely command line based, SMTP email
  agent. It was designed to be used in bash scripts, Perl programs, and
  web sites, but it is also quite useful in many other contexts. 
  .

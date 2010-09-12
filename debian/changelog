@@ -4,6 +4,8 @@ sendemail (1.56-2) unstable; urgency=low
   * Update Standards-Version field  
   * Fix d/watch file
   * Update d/copyright to dep5
+  * Update debhelper version to '(>= 7.0.50~)' in Build-Depends field
+  * Fix spelling error (s/completly/completely) in d/control
 
  -- Alejandro Garrido Mota <garridomota@gmail.com>  Sun, 12 Sep 2010 12:11:17 -0430
 
