@@ -2,6 +2,8 @@ sendemail (1.56-2) unstable; urgency=low
 
   * Remove DH_VERBOSE in d/rules
   * Update Standards-Version field  
+  * Fix d/watch file
+  * Update d/copyright to dep5
 
  -- Alejandro Garrido Mota <garridomota@gmail.com>  Sun, 12 Sep 2010 12:11:17 -0430
 
