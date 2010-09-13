@@ -1,3 +1,6 @@
+Description: Add IPV6 support
+Bug-Debian: http://bugs.debian.org/591920
+Author: Roman Mamedov <roman@rm.pp.ru>
 --- a/sendEmail
 +++ b/sendEmail
 @@ -37,6 +37,7 @@
