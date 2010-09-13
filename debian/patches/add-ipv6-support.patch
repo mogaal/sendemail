@@ -1,0 +1,19 @@
+--- a/sendEmail
++++ b/sendEmail
+@@ -37,6 +37,7 @@
+ ##############################################################################
+ use strict;
+ use IO::Socket;
++use IO::Socket::INET6;
+ 
+ 
+ ########################
+@@ -1839,7 +1840,7 @@
+     quit("", 1);
+ };
+ alarm($conf{'alarm'}) if ($^O !~ /win/i);  ## alarm() doesn't work in win32;
+-$SERVER = IO::Socket::INET->new( PeerAddr  => $conf{'server'},
++$SERVER = IO::Socket::INET6->new( PeerAddr  => $conf{'server'},
+                                  PeerPort  => $conf{'port'},
+                                  LocalAddr => $conf{'bindaddr'},
+                                  Proto     => 'tcp',

@@ -8,7 +8,7 @@ Homepage: http://www.caspian.dotconf.net/menu/Software/SendEmail/
 
 Package: sendemail
 Architecture: all
-Depends: ${misc:Depends}, ${perl:Depends}
+Depends: ${misc:Depends}, ${perl:Depends}, libio-socket-inet6-perl
 Suggests: libio-socket-ssl-perl, libnet-ssleay-perl
 Description: lightweight, command line SMTP email client
  SendEmail is a lightweight, completely command line based, SMTP email
