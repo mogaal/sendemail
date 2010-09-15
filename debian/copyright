@@ -5,12 +5,14 @@ Upstream-Source: http://caspian.dotconf.net/menu/Software/SendEmail/
 Upstream-Name: sendemail
 
 Files: *
-Copyright: 2001, Brandon Zehm <caspian@dotconf.net>
+Copyright: 2000, Brandon Zehm <caspian@dotconf.net>
 License: GPL-2+
+X-Comment: Per the Berne Convention, the author is assumed to be the copyright
+ holder. Years of copyright are deduced from the CHANGELOG file.
 
 Files: debian/*
 Copyright: 2009-2010, Alejandro Garrido Mota <garridomota@gmail.com>
-License: GPL-3+
+License: GPL-2+
 
 License: GPL-2+
     This program is free software: you can redistribute it and/or modify
@@ -19,11 +21,3 @@ License: GPL-2+
     (at your option) any later version.
     On Debian systems, the complete text of the GNU General
     Public License version 3 can be found in `/usr/share/common-licenses/GPL-2'.
-
-License: GPL-3+
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    On Debian systems, the complete text of the GNU General
-    Public License version 3 can be found in `/usr/share/common-licenses/GPL-3'.
