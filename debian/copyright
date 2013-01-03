@@ -1,7 +1,6 @@
-Format-Specification:
-    http://wiki.debian.org/Proposals/CopyrightFormat?action=recall&rev=196
-Upstream-Maintainer: Alejandro Garrido Mota <garridomota@gmail.com>
-Upstream-Source: http://caspian.dotconf.net/menu/Software/SendEmail/
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Contact: Brandon Zehm <caspian@dotconf.net>
+Source: http://caspian.dotconf.net/menu/Software/SendEmail/
 Upstream-Name: sendemail
 
 Files: *
@@ -11,7 +10,7 @@ X-Comment: Per the Berne Convention, the author is assumed to be the copyright
  holder. Years of copyright are deduced from the CHANGELOG file.
 
 Files: debian/*
-Copyright: 2009-2010, Alejandro Garrido Mota <garridomota@gmail.com>
+Copyright: 2009-2013, Alejandro Garrido Mota <garridomota@gmail.com>
 License: GPL-2+
 
 License: GPL-2+
