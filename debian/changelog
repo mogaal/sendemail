@@ -1,6 +1,8 @@
 sendemail (1.56-3) UNRELEASED; urgency=low
 
   * Add patch to fix fails when tls is enabled (Closes: #679911).
+  * Update Standards-Version field to 3.9.4.
+  * Update d/copyright to copyright format 1.0.
 
  -- Alejandro Garrido Mota <garridomota@gmail.com>  Thu, 03 Jan 2013 11:00:23 -0430
 

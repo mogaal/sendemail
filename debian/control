@@ -3,7 +3,7 @@ Section: mail
 Priority: optional
 Maintainer: Alejandro Garrido Mota <garridomota@gmail.com>
 Build-Depends: debhelper (>= 7.0.50~)
-Standards-Version: 3.9.1
+Standards-Version: 3.9.4
 Homepage: http://www.caspian.dotconf.net/menu/Software/SendEmail/
 
 Package: sendemail

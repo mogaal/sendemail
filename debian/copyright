@@ -1,7 +1,6 @@
-Format-Specification:
-    http://wiki.debian.org/Proposals/CopyrightFormat?action=recall&rev=196
-Upstream-Maintainer: Alejandro Garrido Mota <garridomota@gmail.com>
-Upstream-Source: http://caspian.dotconf.net/menu/Software/SendEmail/
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Contact: Brandon Zehm <caspian@dotconf.net>
+Source: http://caspian.dotconf.net/menu/Software/SendEmail/
 Upstream-Name: sendemail
 
 Files: *
