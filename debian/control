@@ -2,9 +2,11 @@ Source: sendemail
 Section: mail
 Priority: optional
 Maintainer: Alejandro Garrido Mota <garridomota@gmail.com>
-Build-Depends: debhelper (>= 7.0.50~)
+Build-Depends: debhelper (>= 9)
 Standards-Version: 3.9.4
 Homepage: http://www.caspian.dotconf.net/menu/Software/SendEmail/
+Vcs-Git: git://github.com/mogaal/sendemail.git
+Vcs-Browser: https://github.com/mogaal/sendemail
 
 Package: sendemail
 Architecture: all
