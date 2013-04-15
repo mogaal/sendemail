@@ -1,7 +1,7 @@
 Source: sendemail
 Section: mail
 Priority: optional
-Maintainer: Alejandro Garrido Mota <garridomota@gmail.com>
+Maintainer: Alejandro Garrido Mota <alejandro@debian.org>
 Build-Depends: debhelper (>= 9)
 Standards-Version: 3.9.4
 Homepage: http://www.caspian.dotconf.net/menu/Software/SendEmail/

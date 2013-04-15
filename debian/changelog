@@ -2,12 +2,13 @@ sendemail (1.56-3) experimental; urgency=low
 
   * Add patch to fix fails when tls is enabled (Closes: #679911).
   * d/control: 
-      - Update Standards-Version field to 3.9.4.
-      - Add Vcs-Git and Vcs-Browser field.
-      - Replace debhelper version in B-D
+     - Update Standards-Version field to 3.9.4.
+     - Add Vcs-Git and Vcs-Browser field.
+     - Replace debhelper version in B-D
+     - Improve 'Homepage' field. Thanks Feth Arezki (Closes: #703681).
   * d/copyright:
-      - Update to copyright format 1.0.
-      - Update copyright dates.
+     - Update to copyright format 1.0.
+     - Update copyright dates.
   * Update d/compat file to dh9
 
  -- Alejandro Garrido Mota <garridomota@gmail.com>  Thu, 03 Jan 2013 11:00:23 -0430
