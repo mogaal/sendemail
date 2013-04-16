@@ -1,4 +1,4 @@
-sendemail (1.56-3) experimental; urgency=low
+sendemail (1.56-3) unstable; urgency=low
 
   * Add patch to fix fails when tls is enabled (Closes: #679911).
   * d/control: 
