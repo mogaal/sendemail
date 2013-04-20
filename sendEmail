@@ -1307,7 +1307,7 @@ Synopsis:  $conf{'programName'} -f ADDRESS [options]
     -bcc ADDRESS [ADDR ...]   bcc email address(es)
     -xu  USERNAME             username for SMTP authentication
     -xp  PASSWORD             password for SMTP authentication
-    -xp-file FILE             read from file the password for SMTP authentication
+    -xp-file FILE             read the password for SMTP server from FILE
 
   ${colorGreen}Paranormal:${colorNormal}
     -b BINDADDR[:PORT]        local host bind address
