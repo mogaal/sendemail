@@ -1,3 +1,9 @@
+sendemail (1.56-4) unstable; urgency=low
+
+  * Upload to unstable 
+
+ -- Alejandro Garrido Mota <alejandro@debian.org>  Fri, 23 May 2013 10:10:06 -0430
+
 sendemail (1.56-3) experimental; urgency=low
 
   * Add patch to fix fails when tls is enabled (Closes: #679911).
