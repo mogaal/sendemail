@@ -1,2 +1,3 @@
 fix_ssl_version.patch
 add-ipv6-support.patch
+local-sendmail.patch
