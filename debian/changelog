@@ -1,3 +1,10 @@
+sendemail (1.56-3.1) UNRELEASED; urgency=low
+
+  * Non-maintainer upload.
+  * Add -S flag to use local sendmail binary rather than network connection.
+
+ -- Olivier Mehani <shtrom-debian@ssji.net>  Sat, 17 Aug 2013 22:52:52 +1000
+
 sendemail (1.56-3) experimental; urgency=low
 
   * Add patch to fix fails when tls is enabled (Closes: #679911).
