@@ -1,3 +1,10 @@
+sendemail (1.56-5) unstable; urgency=low
+
+  * Add -S flag to use local sendmail binary rather than network connection.
+    Thanks to Olivier Mehani <shtrom@ssji.net>.
+
+ -- Alejandro Garrido Mota <alejandro@debian.org>  Sun, 01 Sep 2013 15:11:37 +0200
+
 sendemail (1.56-4) unstable; urgency=low
 
   * Upload to unstable 

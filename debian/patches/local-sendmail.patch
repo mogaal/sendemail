@@ -1,0 +1,695 @@
+Description: Add support for the use of a local sendmail binary
+ If the -S option is specified (with an optional argument being the path to the
+ sendmail binary to use), sendEmail delegates the SMTP dance to the locate MTA,
+ and simply generates the message and passes it on to the sendmail utility (-bm
+ -t).
+ .
+ This is particularly useful when no actual sendmail runs on the machine, but
+ the email-sending logic is centralised around something like sSMTP which
+ masquerades as a normal sendmail binary.
+Author: Olivier Mehani <shtrom@ssji.net>
+
+--- a/sendEmail
++++ b/sendEmail
+@@ -68,6 +68,10 @@
+     "tls_client"           => 0,                                   ## If TLS is supported by the client (us)
+     "tls_server"           => 0,                                   ## If TLS is supported by the remote SMTP server
+     
++    ## Sendmail
++    "sendmail"             => '/usr/bin/sendmail',
++    "use_sendmail"         => 0,
++
+     ## Email
+     "delimiter"            => "----MIME delimiter for sendEmail-"  ## MIME Delimiter
+                               . rand(1000000),                     ## Add some randomness to the delimiter
+@@ -102,6 +106,8 @@
+ ## More variables used later in the program
+ my $SERVER;
+ my $CRLF        = "\015\012";
++my $LF          = "\012";
++my $LTERM       = $CRLF;
+ my $subject     = '';
+ my $header      = '';
+ my $message     = '';
+@@ -316,6 +322,7 @@
+             
+             ## Replace '\n' with $CRLF.
+             ## This allows newlines with messages sent on the command line
++           ## XXX: This might cause problems with use_sendmail=1
+             $message =~ s/\\n/$CRLF/g;
+         }
+         
+@@ -340,6 +347,17 @@
+             else { printmsg("WARNING - The argument after -s was not the server!", 0); $counter--; }
+         }
+ 
++        elsif ($ARGS[$counter] =~ /^-S$/) {                  ## Sendmail ##
++            $counter++;
++            $conf{'use_sendmail'} = 1;
++            $LTERM = $LF;
++            if ($ARGS[$counter] && $ARGS[$counter] !~ /^-/) {
++                $conf{'sendmail'} = $ARGS[$counter];
++            } else {
++                $counter--;
++            }
++        }
++
+         elsif ($ARGS[$counter] =~ /^-b$/) {                  ## Bind Address ##
+             $counter++;
+             if ($ARGS[$counter] && $ARGS[$counter] !~ /^-/) {
+@@ -420,6 +438,9 @@
+     
+     if (!$conf{'server'}) { $conf{'server'} = 'localhost'; }
+     if (!$conf{'port'})   { $conf{'port'} = 25; }
++    if ($conf{'use_sendmail'} && !$conf{'sendmail'}) {
++        $conf{'sendmail'} = "/usr/bin/sendmail";
++    }
+     if (!$from) {
+         quit("ERROR => You must specify a 'from' field!  Try --help.", 1);
+     }
+@@ -451,28 +472,31 @@
+         quit("ERROR => You used -l to enable logging but didn't specify a log file!", 1);
+     }    
+     
+-    if ( $opt{'username'} ) {
+-        if (!$opt{'password'}) {
+-            ## Prompt for a password since one wasn't specified with the -xp option.
+-            $SIG{'ALRM'} = sub { quit("ERROR => Timeout waiting for password inpupt", 1); };
+-            alarm(60) if ($^O !~ /win/i);  ## alarm() doesn't work in win32
+-            print "Password: ";
+-            $opt{'password'} = <STDIN>; chomp $opt{'password'};
++    ## Check network parameters if needed
++    if ( !$conf{'use_sendmail'} ) {
++        if ( $opt{'username'} ) {
+             if (!$opt{'password'}) {
+-                quit("ERROR => A username for SMTP authentication was specified, but no password!", 1);
++                ## Prompt for a password since one wasn't specified with the -xp option.
++                $SIG{'ALRM'} = sub { quit("ERROR => Timeout waiting for password inpupt", 1); };
++                alarm(60) if ($^O !~ /win/i);  ## alarm() doesn't work in win32
++                print "Password: ";
++                $opt{'password'} = <STDIN>; chomp $opt{'password'};
++                if (!$opt{'password'}) {
++                    quit("ERROR => A username for SMTP authentication was specified, but no password!", 1);
++                }
+             }
+         }
+-    }
+-    
+-    ## Validate the TLS setting
+-    $opt{'tls'} = lc($opt{'tls'});
+-    if ($opt{'tls'} !~ /^(auto|yes|no)$/) {
+-        quit("ERROR => Invalid TLS setting ($opt{'tls'}). Must be one of auto, yes, or no.", 1);
+-    }
+-    
+-    ## If TLS is set to "yes", make sure sendEmail loaded the libraries needed.
+-    if ($opt{'tls'} eq 'yes' and $conf{'tls_client'} == 0) {
+-        quit("ERROR => No TLS support!  SendEmail can't load required libraries. (try installing Net::SSLeay and IO::Socket::SSL)", 1);
++        
++        ## Validate the TLS setting
++        $opt{'tls'} = lc($opt{'tls'});
++        if ($opt{'tls'} !~ /^(auto|yes|no)$/) {
++            quit("ERROR => Invalid TLS setting ($opt{'tls'}). Must be one of auto, yes, or no.", 1);
++        }
++        
++        ## If TLS is set to "yes", make sure sendEmail loaded the libraries needed.
++        if ($opt{'tls'} eq 'yes' and $conf{'tls_client'} == 0) {
++            quit("ERROR => No TLS support!  SendEmail can't load required libraries. (try installing Net::SSLeay and IO::Socket::SSL)", 1);
++        }
+     }
+     
+     ## Return 0 errors
+@@ -803,7 +827,6 @@
+     my $chunk = $_[1];
+     my $tmp = '';
+     my $base64 = '';
+-    my $CRLF = "\r\n";
+     
+     ###################################
+     ## Convert binary data to base64 ##
+@@ -833,15 +856,15 @@
+     $data = '';
+     $base64 =~ s/.{$padding}$/'=' x $padding/e if $padding; ## Fix the end padding if flag (from above) is set
+     if ($chunk) {
+-        while ($base64 =~ s/(.{1,76})//s) {                     ## Put $CRLF after each 76 characters
+-            $data .= "$1$CRLF";
++        while ($base64 =~ s/(.{1,76})//s) {                     ## Put $LTERM after each 76 characters
++            $data .= "$1$LTERM";
+         }
+     }
+     else {
+         $data = $base64;
+     }
+     
+-    ## Remove any trailing CRLF's
++    ## Remove any trailing LTERM's
+     $data =~ s/(\r|\n)*$//s;
+     return($data);
+ }
+@@ -921,12 +944,12 @@
+     ## Generate and print MIME headers ##
+     #####################################
+     
+-    $y  = "$CRLF--$conf{'delimiter'}$CRLF";
+-    $y .= "Content-Type: $content_type;$CRLF";
+-    $y .= "        name=\"$filename_name\"$CRLF";
+-    $y .= "Content-Transfer-Encoding: base64$CRLF";
+-    $y .= "Content-Disposition: attachment; filename=\"$filename_name\"$CRLF";
+-    $y .= "$CRLF";
++    $y  = "$LTERM--$conf{'delimiter'}$LTERM";
++    $y .= "Content-Type: $content_type;$LTERM";
++    $y .= "        name=\"$filename_name\"$LTERM";
++    $y .= "Content-Transfer-Encoding: base64$LTERM";
++    $y .= "Content-Disposition: attachment; filename=\"$filename_name\"$LTERM";
++    $y .= "$LTERM";
+     print $SERVER $y;
+     
+     
+@@ -960,7 +983,7 @@
+         ## Print chunks to the server ##
+         ################################
+         while ($base64 =~ s/(.{76})//s) {
+-            print $SERVER "$1$CRLF";
++            print $SERVER "$1$LTERM";
+         }
+       
+     }
+@@ -983,7 +1006,7 @@
+     $res =~ s/.{$padding}$/'=' x $padding/e if $padding; ## Fix the end padding if flag (from above) is set
+     if ($res) {
+         while ($res =~ s/(.{1,76})//s) {                 ## Send it to the email server.
+-            print $SERVER "$1$CRLF";
++            print $SERVER "$1$LTERM";
+         }
+     }
+     
+@@ -1294,6 +1317,7 @@
+     -u SUBJECT                message subject
+     -m MESSAGE                message body
+     -s SERVER[:PORT]          smtp mail relay, default is $conf{'server'}:$conf{'port'}
++    -S [SENDMAIL_PATH]        use local sendmail utility (default: $conf{'sendmail'}) instead of network MTA
+ 
+   ${colorGreen}Optional:${colorNormal}
+     -a   FILE [FILE ...]      file attachment(s)
+@@ -1813,14 +1837,14 @@
+     }
+ }
+ 
+-## Replace bare LF's with CRLF's (\012 should always have \015 with it)
+-$message =~ s/(\015)?(\012|$)/\015\012/g;
++## Replace bare LF's with LTERM's (\012 should always have \015 with it)
++$message =~ s/(\015)?(\012|$)/$LTERM/g;
+ 
+-## Replace bare CR's with CRLF's (\015 should always have \012 with it)
+-$message =~ s/(\015)(\012|$)?/\015\012/g;
++## Replace bare CR's with LTERM's (\015 should always have \012 with it)
++$message =~ s/(\015)(\012|$)?/$LTERM/g;
+ 
+ ## Check message for bare periods and encode them
+-$message =~ s/(^|$CRLF)(\.{1})($CRLF|$)/$1.$2$3/g;
++$message =~ s/(^|$LTERM)(\.{1})($LTERM|$)/$1.$2$3/g;
+ 
+ ## Get the current date for the email header
+ my ($sec,$min,$hour,$mday,$mon,$year,$day) = gmtime();
+@@ -1828,181 +1852,184 @@
+ my $date = sprintf("%s, %s %s %d %.2d:%.2d:%.2d %s",$day, $mday, $mon, $year, $hour, $min, $sec, $conf{'timezone'});
+ 
+ 
++if( $conf{'use_sendmail'} ) {
++    open ($SERVER, "| $conf{'sendmail'} -bm -t")
++            || die "ERROR => Can't run $conf{'sendmail'}: $!";
++} else {
++    ##################################
++    ##  Connect to the SMTP server  ##
++    ##################################
++    printmsg("DEBUG => Connecting to $conf{'server'}:$conf{'port'}", 1);
++    $SIG{'ALRM'} = sub { 
++        printmsg("ERROR => Timeout while connecting to $conf{'server'}:$conf{'port'}  There was no response after $conf{'alarm'} seconds.", 0); 
++        printmsg("HINT => Try specifying a different mail relay with the -s option.", 1);
++        quit("", 1);
++    };
++    alarm($conf{'alarm'}) if ($^O !~ /win/i);  ## alarm() doesn't work in win32;
++    $SERVER = IO::Socket::INET6->new( PeerAddr  => $conf{'server'},
++        PeerPort  => $conf{'port'},
++        LocalAddr => $conf{'bindaddr'},
++        Proto     => 'tcp',
++        Autoflush => 1,
++        timeout   => $conf{'alarm'},
++    );
++    alarm(0) if ($^O !~ /win/i);  ## alarm() doesn't work in win32;
+ 
++    ## Make sure we got connected
++    if ( (!$SERVER) or (!$SERVER->opened()) ) {
++        printmsg("ERROR => Connection attempt to $conf{'server'}:$conf{'port'} failed: $@", 0);
++        printmsg("HINT => Try specifying a different mail relay with the -s option.", 1);
++        quit("", 1);
++    }
+ 
+-##################################
+-##  Connect to the SMTP server  ##
+-##################################
+-printmsg("DEBUG => Connecting to $conf{'server'}:$conf{'port'}", 1);
+-$SIG{'ALRM'} = sub { 
+-    printmsg("ERROR => Timeout while connecting to $conf{'server'}:$conf{'port'}  There was no response after $conf{'alarm'} seconds.", 0); 
+-    printmsg("HINT => Try specifying a different mail relay with the -s option.", 1);
+-    quit("", 1);
+-};
+-alarm($conf{'alarm'}) if ($^O !~ /win/i);  ## alarm() doesn't work in win32;
+-$SERVER = IO::Socket::INET6->new( PeerAddr  => $conf{'server'},
+-                                 PeerPort  => $conf{'port'},
+-                                 LocalAddr => $conf{'bindaddr'},
+-                                 Proto     => 'tcp',
+-                                 Autoflush => 1,
+-                                 timeout   => $conf{'alarm'},
+-);
+-alarm(0) if ($^O !~ /win/i);  ## alarm() doesn't work in win32;
+-
+-## Make sure we got connected
+-if ( (!$SERVER) or (!$SERVER->opened()) ) {
+-    printmsg("ERROR => Connection attempt to $conf{'server'}:$conf{'port'} failed: $@", 0);
+-    printmsg("HINT => Try specifying a different mail relay with the -s option.", 1);
+-    quit("", 1);
+-}
+-
+-## Save our IP address for later
+-$conf{'ip'} = $SERVER->sockhost();
+-printmsg("DEBUG => My IP address is: $conf{'ip'}", 1);
+-
++    ## Save our IP address for later
++    $conf{'ip'} = $SERVER->sockhost();
++    printmsg("DEBUG => My IP address is: $conf{'ip'}", 1);
+ 
+ 
+ 
+ 
+ 
+ 
+-#########################
+-##  Do the SMTP Dance  ##
+-#########################
+ 
+-## Read initial greeting to make sure we're talking to a live SMTP server
+-if (SMTPchat()) { quit($conf{'error'}, 1); }
++    #########################
++    ##  Do the SMTP Dance  ##
++    #########################
+ 
+-## We're about to use $opt{'fqdn'}, make sure it isn't empty
+-if (!$opt{'fqdn'}) {
+-    ## Ok, that means we couldn't get a hostname, how about using the IP address for the HELO instead
+-    $opt{'fqdn'} = "[" . $conf{'ip'} . "]";
+-}
++    ## Read initial greeting to make sure we're talking to a live SMTP server
++    if (SMTPchat()) { quit($conf{'error'}, 1); }
+ 
+-## EHLO
+-if (SMTPchat('EHLO ' . $opt{'fqdn'}))   {
+-    printmsg($conf{'error'}, 0);
+-    printmsg("NOTICE => EHLO command failed, attempting HELO instead");
+-    if (SMTPchat('HELO ' . $opt{'fqdn'})) { quit($conf{'error'}, 1); }
+-    if ( $opt{'username'} and $opt{'password'} ) {
+-        printmsg("WARNING => The mail server does not support SMTP authentication!", 0);
++    ## We're about to use $opt{'fqdn'}, make sure it isn't empty
++    if (!$opt{'fqdn'}) {
++        ## Ok, that means we couldn't get a hostname, how about using the IP address for the HELO instead
++        $opt{'fqdn'} = "[" . $conf{'ip'} . "]";
+     }
+-}
+-else {
+-    
+-    ## Determin if the server supports TLS
+-    if ($conf{'SMTPchat_response'} =~ /STARTTLS/) {
+-        $conf{'tls_server'} = 1;
+-        printmsg("DEBUG => The remote SMTP server supports TLS :)", 2);
++
++    ## EHLO
++    if (SMTPchat('EHLO ' . $opt{'fqdn'}))   {
++        printmsg($conf{'error'}, 0);
++        printmsg("NOTICE => EHLO command failed, attempting HELO instead");
++        if (SMTPchat('HELO ' . $opt{'fqdn'})) { quit($conf{'error'}, 1); }
++        if ( $opt{'username'} and $opt{'password'} ) {
++            printmsg("WARNING => The mail server does not support SMTP authentication!", 0);
++        }
+     }
+     else {
+-        $conf{'tls_server'} = 0;
+-        printmsg("DEBUG => The remote SMTP server does NOT support TLS :(", 2);
+-    }
+-    
+-    ## Start TLS if possible
+-    if ($conf{'tls_server'} == 1 and $conf{'tls_client'} == 1 and $opt{'tls'} =~ /^(yes|auto)$/) {
+-        printmsg("DEBUG => Starting TLS", 2);
+-        if (SMTPchat('STARTTLS')) { quit($conf{'error'}, 1); }
+-        if (! IO::Socket::SSL->start_SSL($SERVER, SSL_version => 'SSLv23:!SSLv2')) {
+-            quit("ERROR => TLS setup failed: " . IO::Socket::SSL::errstr(), 1);
+-        }
+-        printmsg("DEBUG => TLS: Using cipher: ". $SERVER->get_cipher(), 3);
+-        printmsg("DEBUG => TLS session initialized :)", 1);
+         
+-        ## Restart our SMTP session
+-        if (SMTPchat('EHLO ' . $opt{'fqdn'})) { quit($conf{'error'}, 1); }
+-    }
+-    elsif ($opt{'tls'} eq 'yes' and $conf{'tls_server'} == 0) {
+-        quit("ERROR => TLS not possible! Remote SMTP server, $conf{'server'},  does not support it.", 1);
+-    }
+-    
+-    
+-    ## Do SMTP Auth if required
+-    if ( $opt{'username'} and $opt{'password'} ) {
+-        if ($conf{'SMTPchat_response'} !~ /AUTH\s/) {
+-            printmsg("NOTICE => Authentication not supported by the remote SMTP server!", 0);
++        ## Determine if the server supports TLS
++        if ($conf{'SMTPchat_response'} =~ /STARTTLS/) {
++            $conf{'tls_server'} = 1;
++            printmsg("DEBUG => The remote SMTP server supports TLS :)", 2);
+         }
+         else {
+-            my $auth_succeeded = 0;
+-            my $mutual_method = 0;
+-            
+-            # ## SASL CRAM-MD5 authentication method
+-            # if ($conf{'SMTPchat_response'} =~ /\bCRAM-MD5\b/i) {
+-            #     printmsg("DEBUG => SMTP-AUTH: Using CRAM-MD5 authentication method", 1);
+-            #     if (SMTPchat('AUTH CRAM-MD5')) { quit($conf{'error'}, 1); }
+-            #     
+-            #     ## FIXME!!
+-            #     
+-            #     printmsg("DEBUG => User authentication was successful", 1);
+-            # }
++            $conf{'tls_server'} = 0;
++            printmsg("DEBUG => The remote SMTP server does NOT support TLS :(", 2);
++        }
++        
++        ## Start TLS if possible
++        if ($conf{'tls_server'} == 1 and $conf{'tls_client'} == 1 and $opt{'tls'} =~ /^(yes|auto)$/) {
++            printmsg("DEBUG => Starting TLS", 2);
++            if (SMTPchat('STARTTLS')) { quit($conf{'error'}, 1); }
++            if (! IO::Socket::SSL->start_SSL($SERVER, SSL_version => 'SSLv23:!SSLv2')) {
++                quit("ERROR => TLS setup failed: " . IO::Socket::SSL::errstr(), 1);
++            }
++            printmsg("DEBUG => TLS: Using cipher: ". $SERVER->get_cipher(), 3);
++            printmsg("DEBUG => TLS session initialized :)", 1);
+             
+-            ## SASL LOGIN authentication method
+-            if ($auth_succeeded == 0 and $conf{'SMTPchat_response'} =~ /\bLOGIN\b/i) {
+-                $mutual_method = 1;
+-                printmsg("DEBUG => SMTP-AUTH: Using LOGIN authentication method", 1);
+-                if (!SMTPchat('AUTH LOGIN')) {
+-                    if (!SMTPchat(base64_encode($opt{'username'}))) {
+-                        if (!SMTPchat(base64_encode($opt{'password'}))) {
+-                            $auth_succeeded = 1;
+-                            printmsg("DEBUG => User authentication was successful (Method: LOGIN)", 1);
++            ## Restart our SMTP session
++            if (SMTPchat('EHLO ' . $opt{'fqdn'})) { quit($conf{'error'}, 1); }
++        }
++        elsif ($opt{'tls'} eq 'yes' and $conf{'tls_server'} == 0) {
++            quit("ERROR => TLS not possible! Remote SMTP server, $conf{'server'},  does not support it.", 1);
++        }
++        
++        
++        ## Do SMTP Auth if required
++        if ( $opt{'username'} and $opt{'password'} ) {
++            if ($conf{'SMTPchat_response'} !~ /AUTH\s/) {
++                printmsg("NOTICE => Authentication not supported by the remote SMTP server!", 0);
++            }
++            else {
++                my $auth_succeeded = 0;
++                my $mutual_method = 0;
++                
++                # ## SASL CRAM-MD5 authentication method
++                # if ($conf{'SMTPchat_response'} =~ /\bCRAM-MD5\b/i) {
++                #     printmsg("DEBUG => SMTP-AUTH: Using CRAM-MD5 authentication method", 1);
++                #     if (SMTPchat('AUTH CRAM-MD5')) { quit($conf{'error'}, 1); }
++                #     
++                #     ## FIXME!!
++                #     
++                #     printmsg("DEBUG => User authentication was successful", 1);
++                # }
++                
++                ## SASL LOGIN authentication method
++                if ($auth_succeeded == 0 and $conf{'SMTPchat_response'} =~ /\bLOGIN\b/i) {
++                    $mutual_method = 1;
++                    printmsg("DEBUG => SMTP-AUTH: Using LOGIN authentication method", 1);
++                    if (!SMTPchat('AUTH LOGIN')) {
++                        if (!SMTPchat(base64_encode($opt{'username'}))) {
++                            if (!SMTPchat(base64_encode($opt{'password'}))) {
++                                $auth_succeeded = 1;
++                                printmsg("DEBUG => User authentication was successful (Method: LOGIN)", 1);
++                            }
+                         }
+                     }
++                    if ($auth_succeeded == 0) {
++                        printmsg("DEBUG => SMTP-AUTH: LOGIN authenticaion failed.", 1);
++                    }
+                 }
+-                if ($auth_succeeded == 0) {
+-                    printmsg("DEBUG => SMTP-AUTH: LOGIN authenticaion failed.", 1);
++                
++                ## SASL PLAIN authentication method
++                if ($auth_succeeded == 0 and $conf{'SMTPchat_response'} =~ /\bPLAIN\b/i) {
++                    $mutual_method = 1;
++                    printmsg("DEBUG => SMTP-AUTH: Using PLAIN authentication method", 1);
++                    if (SMTPchat('AUTH PLAIN ' . base64_encode("$opt{'username'}\0$opt{'username'}\0$opt{'password'}"))) {
++                        printmsg("DEBUG => SMTP-AUTH: PLAIN authenticaion failed.", 1);
++                    }
++                    else {
++                        $auth_succeeded = 1;
++                        printmsg("DEBUG => User authentication was successful (Method: PLAIN)", 1);
++                    }
+                 }
+-            }
+-            
+-            ## SASL PLAIN authentication method
+-            if ($auth_succeeded == 0 and $conf{'SMTPchat_response'} =~ /\bPLAIN\b/i) {
+-                $mutual_method = 1;
+-                printmsg("DEBUG => SMTP-AUTH: Using PLAIN authentication method", 1);
+-                if (SMTPchat('AUTH PLAIN ' . base64_encode("$opt{'username'}\0$opt{'username'}\0$opt{'password'}"))) {
+-                    printmsg("DEBUG => SMTP-AUTH: PLAIN authenticaion failed.", 1);
++                
++                ## If none of the authentication methods supported by sendEmail were supported by the server, let the user know
++                if ($mutual_method == 0) {
++                    printmsg("WARNING => SMTP-AUTH: No mutually supported authentication methods available", 0);
+                 }
+-                else {
+-                    $auth_succeeded = 1;
+-                    printmsg("DEBUG => User authentication was successful (Method: PLAIN)", 1);
++                
++                ## If we didn't get authenticated, log an error message and exit
++                if ($auth_succeeded == 0) {
++                    quit("ERROR => ERROR => SMTP-AUTH: Authentication to $conf{'server'}:$conf{'port'} failed.", 1);
+                 }
+             }
+-            
+-            ## If none of the authentication methods supported by sendEmail were supported by the server, let the user know
+-            if ($mutual_method == 0) {
+-                printmsg("WARNING => SMTP-AUTH: No mutually supported authentication methods available", 0);
+-            }
+-            
+-            ## If we didn't get authenticated, log an error message and exit
+-            if ($auth_succeeded == 0) {
+-                quit("ERROR => ERROR => SMTP-AUTH: Authentication to $conf{'server'}:$conf{'port'} failed.", 1);
+-            }
+         }
+     }
+-}
+ 
+-## MAIL FROM
+-if (SMTPchat('MAIL FROM:<' .(returnAddressParts($from))[1]. '>')) { quit($conf{'error'}, 1); }
++    ## MAIL FROM
++    if (SMTPchat('MAIL FROM:<' .(returnAddressParts($from))[1]. '>')) { quit($conf{'error'}, 1); }
+ 
+-## RCPT TO
+-my $oneRcptAccepted = 0;
+-foreach my $rcpt (@to, @cc, @bcc) {
+-    my ($name, $address) = returnAddressParts($rcpt);
+-    if (SMTPchat('RCPT TO:<' . $address . '>')) {
+-        printmsg("WARNING => The recipient <$address> was rejected by the mail server, error follows:", 0);
+-        $conf{'error'} =~ s/^ERROR/WARNING/o;
+-        printmsg($conf{'error'}, 0);
++    ## RCPT TO
++    my $oneRcptAccepted = 0;
++    foreach my $rcpt (@to, @cc, @bcc) {
++        my ($name, $address) = returnAddressParts($rcpt);
++        if (SMTPchat('RCPT TO:<' . $address . '>')) {
++            printmsg("WARNING => The recipient <$address> was rejected by the mail server, error follows:", 0);
++            $conf{'error'} =~ s/^ERROR/WARNING/o;
++            printmsg($conf{'error'}, 0);
++        }
++        elsif ($oneRcptAccepted == 0) {
++            $oneRcptAccepted = 1;
++        }
+     }
+-    elsif ($oneRcptAccepted == 0) {
+-        $oneRcptAccepted = 1;
++    ## If no recipients were accepted we need to exit with an error.
++    if ($oneRcptAccepted == 0) {
++        quit("ERROR => Exiting. No recipients were accepted for delivery by the mail server.", 1);
+     }
+-}
+-## If no recipients were accepted we need to exit with an error.
+-if ($oneRcptAccepted == 0) {
+-    quit("ERROR => Exiting. No recipients were accepted for delivery by the mail server.", 1);
+-}
+ 
+-## DATA
+-if (SMTPchat('DATA')) { quit($conf{'error'}, 1); }
++    ## DATA
++    if (SMTPchat('DATA')) { quit($conf{'error'}, 1); }
++}
+ 
+ 
+ ###############################
+@@ -2020,19 +2047,19 @@
+     
+     ## Message-ID: <MessageID>
+     if ($opt{'message-header'} !~ /^Message-ID:/iom) {
+-        $header .= 'Message-ID: <' . $conf{'Message-ID'} . '@' . $conf{'hostname'} . '>' . $CRLF;
++        $header .= 'Message-ID: <' . $conf{'Message-ID'} . '@' . $conf{'hostname'} . '>' . $LTERM;
+     }
+     
+     ## From: "Name" <address@domain.com> (the pointless test below is just to keep scoping correct)
+     if ($from and $opt{'message-header'} !~ /^From:/iom) {
+         my ($name, $address) = returnAddressParts($from);
+-        $header .= 'From: "' . $name . '" <' . $address . '>' . $CRLF;
++        $header .= 'From: "' . $name . '" <' . $address . '>' . $LTERM;
+     }
+     
+     ## Reply-To: 
+     if ($opt{'reply-to'} and $opt{'message-header'} !~ /^Reply-To:/iom) {
+         my ($name, $address) = returnAddressParts($opt{'reply-to'});
+-        $header .= 'Reply-To: "' . $name . '" <' . $address . '>' . $CRLF;
++        $header .= 'Reply-To: "' . $name . '" <' . $address . '>' . $LTERM;
+     }
+     
+     ## To: "Name" <address@domain.com>
+@@ -2052,12 +2079,12 @@
+                 $msg .= ",";
+             }
+             
+-            $header .= $msg . $CRLF;
++            $header .= $msg . $LTERM;
+         }
+     }
+     ## We always want a To: line so if the only recipients were bcc'd they don't see who it was sent to
+     else {
+-        $header .= "To: \"Undisclosed Recipients\" <>$CRLF";
++        $header .= "To: \"Undisclosed Recipients\" <>$LTERM";
+     }
+     
+     if (scalar(@cc) > 0 and $opt{'message-header'} !~ /^Cc:/iom) {
+@@ -2073,32 +2100,32 @@
+                 $msg .= ",";
+             }
+             
+-            $header .= $msg . $CRLF;
++            $header .= $msg . $LTERM;
+         }
+     }
+     
+     if ($opt{'message-header'} !~ /^Subject:/iom) {
+-        $header .= 'Subject: ' . $subject . $CRLF;                   ## Subject
++        $header .= 'Subject: ' . $subject . $LTERM;                   ## Subject
+     }
+     if ($opt{'message-header'} !~ /^Date:/iom) {
+-        $header .= 'Date: ' . $date . $CRLF;                         ## Date
++        $header .= 'Date: ' . $date . $LTERM;                         ## Date
+     }
+     if ($opt{'message-header'} !~ /^X-Mailer:/iom) {
+-        $header .= 'X-Mailer: sendEmail-'.$conf{'version'}.$CRLF;    ## X-Mailer
++        $header .= 'X-Mailer: sendEmail-'.$conf{'version'}.$LTERM;    ## X-Mailer
+     }
+     ## I wonder if I should put this in by default?
+     # if ($opt{'message-header'} !~ /^X-Originating-IP:/iom) {
+-    #     $header .= 'X-Originating-IP: ['.$conf{'ip'}.']'.$CRLF;      ## X-Originating-IP
++    #     $header .= 'X-Originating-IP: ['.$conf{'ip'}.']'.$LTERM;      ## X-Originating-IP
+     # }
+     
+     ## Encode all messages with MIME.
+     if ($opt{'message-header'} !~ /^MIME-Version:/iom) {
+-        $header .=  "MIME-Version: 1.0$CRLF";
++        $header .=  "MIME-Version: 1.0$LTERM";
+     }
+     if ($opt{'message-header'} !~ /^Content-Type:/iom) {
+         my $content_type = 'multipart/mixed';
+         if (scalar(@attachments) == 0) { $content_type = 'multipart/related'; }
+-        $header .= "Content-Type: $content_type; boundary=\"$conf{'delimiter'}\"$CRLF";
++        $header .= "Content-Type: $content_type; boundary=\"$conf{'delimiter'}\"$LTERM";
+     }
+     
+     ## Send additional message header line(s) if specified
+@@ -2107,34 +2134,34 @@
+     }
+     
+     ## Send the message header to the server
+-    print $SERVER $header . $CRLF;
++    print $SERVER $header . $LTERM;
+     
+     ## Start sending the message body to the server
+-    print $SERVER "This is a multi-part message in MIME format. To properly display this message you need a MIME-Version 1.0 compliant Email program.$CRLF";
+-    print $SERVER "$CRLF";
++    print $SERVER "This is a multi-part message in MIME format. To properly display this message you need a MIME-Version 1.0 compliant Email program.$LTERM";
++    print $SERVER "$LTERM";
+     
+     
+     ## Send message body
+-    print $SERVER "--$conf{'delimiter'}$CRLF";
++    print $SERVER "--$conf{'delimiter'}$LTERM";
+     ## Send a message content-type header:
+     ## If the message contains HTML...
+     if ($opt{'message-content-type'} eq 'html' or ($opt{'message-content-type'} eq 'auto' and $message =~ /^\s*(<HTML|<!DOCTYPE)/i) ) {
+         printmsg("Setting content-type: text/html", 1);
+-        print $SERVER "Content-Type: text/html;$CRLF";
++        print $SERVER "Content-Type: text/html;$LTERM";
+     }
+     ## Otherwise assume it's plain text...
+     elsif ($opt{'message-content-type'} eq 'text' or $opt{'message-content-type'} eq 'auto') {
+         printmsg("Setting content-type: text/plain", 1);
+-        print $SERVER "Content-Type: text/plain;$CRLF";
++        print $SERVER "Content-Type: text/plain;$LTERM";
+     }
+     ## If they've specified their own content-type string...
+     else {
+         printmsg("Setting custom content-type: ".$opt{'message-content-type'}, 1);
+-        print $SERVER "Content-Type: ".$opt{'message-content-type'}.";$CRLF";
++        print $SERVER "Content-Type: ".$opt{'message-content-type'}.";$LTERM";
+     }
+-    print $SERVER "        charset=\"" . $opt{'message-charset'} . "\"$CRLF";
+-    print $SERVER "Content-Transfer-Encoding: 7bit$CRLF";
+-    print $SERVER $CRLF . $message;
++    print $SERVER "        charset=\"" . $opt{'message-charset'} . "\"$LTERM";
++    print $SERVER "Content-Transfer-Encoding: 7bit$LTERM";
++    print $SERVER $LTERM . $message;
+     
+     
+     
+@@ -2161,14 +2188,13 @@
+     
+     
+     ## End the mime encoded message
+-    print $SERVER "$CRLF--$conf{'delimiter'}--$CRLF";  
++    print $SERVER "$LTERM--$conf{'delimiter'}--$LTERM";
+ }
+ 
+-
++if ( !$conf{'use_sendmail'} ) {
+ ## Tell the server we are done sending the email
+-print $SERVER "$CRLF.$CRLF";
+-if (SMTPchat()) { quit($conf{'error'}, 1); }
+-
++    print $SERVER "$CRLF.$CRLF";
++    if (SMTPchat()) { quit($conf{'error'}, 1); }
+ 
+ 
+ ####################
+@@ -2176,9 +2202,9 @@
+ ####################
+ 
+ ## Disconnect from the server (don't SMTPchat(), it breaks when using TLS)
+-print $SERVER "QUIT$CRLF";
+-close $SERVER;
+-
++    print $SERVER "QUIT$CRLF";
++    close $SERVER;
++}
+ 
+ 
+ 
