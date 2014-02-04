@@ -366,6 +366,13 @@ sub processCommandLine {
             }
         }
         
+        elsif ($ARGS[$counter] =~ /^-xp-file$/) {             ## AuthSMTP Password in a file ##
+            $counter++;
+            open my $pfile, '<', $ARGS[$counter]; 
+            $opt{'password'} = <$pfile>; 
+            close $pfile;
+        }
+
         elsif ($ARGS[$counter] =~ /^-xp$/) {                  ## AuthSMTP Password ##
             $counter++;
             if ($ARGS[$counter] && $ARGS[$counter] !~ /^-/) {
@@ -1300,6 +1307,7 @@ Synopsis:  $conf{'programName'} -f ADDRESS [options]
     -bcc ADDRESS [ADDR ...]   bcc email address(es)
     -xu  USERNAME             username for SMTP authentication
     -xp  PASSWORD             password for SMTP authentication
+    -xp-file FILE             read the password for SMTP server from FILE
 
   ${colorGreen}Paranormal:${colorNormal}
     -b BINDADDR[:PORT]        local host bind address
@@ -1567,6 +1575,7 @@ Options that don't fit anywhere else:
     -a   ATTACHMENT [ATTACHMENT ...]
     -xu  USERNAME
     -xp  PASSWORD
+    -xp-file FILE
     -o   username=USERNAME
     -o   password=PASSWORD
     -o   tls=<auto|yes|no>
@@ -1583,6 +1592,9 @@ Options that don't fit anywhere else:
 
 -xp  PASSWORD
     Alias for -o password=PASSWORD
+
+-xp-file  FILE
+    Read the SMTP server password from the specified FILE.
 
 -o   username=USERNAME (synonym for -xu)
     These options allow specification of a username to be used with SMTP
