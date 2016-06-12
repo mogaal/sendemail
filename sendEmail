@@ -37,7 +37,8 @@
 ##############################################################################
 use strict;
 use IO::Socket;
-
+use Encode;
+use Encode::Locale;
 
 ########################
 ##  Global Variables  ##
@@ -922,9 +923,12 @@ sub send_attachment {
     
     $y  = "$CRLF--$conf{'delimiter'}$CRLF";
     $y .= "Content-Type: $content_type;$CRLF";
-    $y .= "        name=\"$filename_name\"$CRLF";
     $y .= "Content-Transfer-Encoding: base64$CRLF";
-    $y .= "Content-Disposition: attachment; filename=\"$filename_name\"$CRLF";
+
+    
+    my $utf8_fname = uc( unpack( "H*", encode('utf8' => decode( locale => $filename_name ))));
+    $utf8_fname =~ s/(..)/%$1/g;
+    $y .= "Content-Disposition: attachment; filename*=UTF-8''$utf8_fname$CRLF";
     $y .= "$CRLF";
     print $SERVER $y;
     
