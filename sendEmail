@@ -1821,6 +1821,9 @@ $message =~ s/(\015)(\012|$)?/\015\012/g;
 ## Check message for bare periods and encode them
 $message =~ s/(^|$CRLF)(\.{1})($CRLF|$)/$1.$2$3/g;
 
+## Check message for lines that begin with a period and stuff them
+$message =~ s/(^|$LTERM)\./$1../g;
+
 ## Get the current date for the email header
 my ($sec,$min,$hour,$mday,$mon,$year,$day) = gmtime();
 $year += 1900; $mon = return_month($mon); $day = return_day($day);
