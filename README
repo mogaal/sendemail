@@ -27,6 +27,12 @@ SendEmail is a perl script/program, and only needs to be copied to a directory
 in your path to make it accessible.  Most likely the following steps will
 be sufficient:
 
+1)chmod +x setup.sh
+
+2)./setup.sh
+
+OR
+
 1) Extract the package
     tar -zxvf sendEmail-v1.XX.tar.gz
 
@@ -40,6 +46,8 @@ be sufficient:
     sendEmail
       or
     /usr/local/bin/sendEmail
+    
+
 
 NOTES:
   * Running sendEmail without any arguments will produce a usage summary.
