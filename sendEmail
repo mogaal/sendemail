@@ -60,7 +60,7 @@ my %conf = (
     "logFile"              => '',                                  ## If this is specified (form the command line via -l) this file will be used for logging.
     
     ## Network
-    "server"               => 'localhost',                         ## Default SMTP server
+    "server"               => undef,                               ## Default SMTP server
     "port"                 => 25,                                  ## Default port
     "bindaddr"             => '',                                  ## Default local bind address
     "alarm"                => '',                                  ## Default timeout for connects and reads, this gets set from $opt{'timeout'}
@@ -190,6 +190,12 @@ sub initialize {
 
 
 
+sub test_tcp_socket {
+
+    return 1 if socket(SOCKET, PF_INET, SOCK_STREAM, getprotobyname("tcp")) and connect(SOCKET, sockaddr_in($_[1], inet_aton($_[0])));
+    return 0;
+
+}
 
 
 
@@ -419,6 +425,9 @@ sub processCommandLine {
     
     if (!$conf{'server'}) { $conf{'server'} = 'localhost'; }
     if (!$conf{'port'})   { $conf{'port'} = 25; }
+    if ((!defined $conf{'server'}) and test_tcp_socket("localhost", $conf{'port'})) {
+    	$conf{'server'} = "localhost";
+    }
     if (!$from) {
         quit("ERROR => You must specify a 'from' field!  Try --help.", 1);
     }
@@ -1005,7 +1014,7 @@ sub send_attachment {
 
 
 ###############################################################################################
-##  Function:    $string = get_hostname (boot $fqdn)
+##  Function:    $string = get_hostname (bool $fqdn)
 ##  
 ##  Description: Tries really hard to returns the short (or FQDN) hostname of the current
 ##               system.  Uses techniques and code from the  Sys-Hostname module.
@@ -1292,7 +1301,7 @@ Synopsis:  $conf{'programName'} -f ADDRESS [options]
     -t ADDRESS [ADDR ...]     to email address(es)
     -u SUBJECT                message subject
     -m MESSAGE                message body
-    -s SERVER[:PORT]          smtp mail relay, default is $conf{'server'}:$conf{'port'}
+    -s SERVER[:PORT]          smtp mail relay, default is localhost:$conf{'port'}
 
   ${colorGreen}Optional:${colorNormal}
     -a   FILE [FILE ...]      file attachment(s)
@@ -1640,8 +1649,11 @@ Options related to networking:
     connect to to deliver your email message to.  If this option is not
     specified sendEmail will try to connect to localhost:25 to deliver
     the message.  THIS IS MOST LIKELY NOT WHAT YOU WANT, AND WILL LIKELY
-    FAIL unless you have a email server (commonly known as an MTA) running
+    FAIL unless you have an email server (commonly known as an MTA) running
     on your computer!
+    If SERVER is specified as "AUTO" (or not specified at all and there isn't
+    a server on localhost:25), sendEmail try to discover an MTA via DNS/MX
+    records considering the first recipient's domain name.
     Typically you will need to specify your company or ISP's email server.
     For example, if you use CableOne you will need to specify:
        -s mail.cableone.net
@@ -1832,7 +1844,32 @@ my $date = sprintf("%s, %s %s %d %.2d:%.2d:%.2d %s",$day, $mday, $mon, $year, $h
 ##################################
 ##  Connect to the SMTP server  ##
 ##################################
-printmsg("DEBUG => Connecting to $conf{'server'}:$conf{'port'}", 1);
+
+	### Figure out destination domain's MX ###
+
+	my $domain_part = (returnAddressParts($to[0])=~/@(.*)/)[0];
+	if (!defined $conf{'server'} or $conf{'server'} eq 'AUTO') {
+		printmsg("WARNING => Relay server name not given, attempt to find an MX server.", 1);
+		eval qq{ use Net::DNS; 1 } or quit($@, 1);
+		for my $possible_mx (mx($domain_part)) {
+			if(test_tcp_socket($possible_mx->{'exchange'}, $conf{'port'})) {	# FIXME: alarm
+				$conf{'server'} = $possible_mx->{'exchange'};
+				last;
+			}
+		}
+	}
+	if (!defined $conf{'server'} or $conf{'server'} eq 'AUTO') {
+		printmsg("ERROR => No Mail eXchanger found for domain $domain_part.", 0);
+		printmsg("HINT => Try specifying a mail relay with the -s option.", 1);
+		quit("", 1);
+	}
+
+my $resolved;
+if($conf{'server'} !~ /^\d+\.\d+\.\d+\.\d+$/) {
+	$resolved = inet_ntoa( (gethostbyname($conf{'server'}))[4] );
+	$resolved = " [$resolved]";
+}
+printmsg("DEBUG => Connecting to $conf{'server'}:$conf{'port'}".$resolved, 1);
 $SIG{'ALRM'} = sub { 
     printmsg("ERROR => Timeout while connecting to $conf{'server'}:$conf{'port'}  There was no response after $conf{'alarm'} seconds.", 0); 
     printmsg("HINT => Try specifying a different mail relay with the -s option.", 1);
