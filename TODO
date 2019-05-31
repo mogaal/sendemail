@@ -4,7 +4,7 @@ Reported Bugs:
 
 Feature Ideas
     [ ] A preferences file with default settings?
-    [ ] Deliver directly to MX server for domain?
+    [X] Deliver directly to MX server for domain?
     [ ] Command line option requesting read-receipt
         X-Confirm-Reading-To:
         Disposition-Notification-To: <user@domain.com>
