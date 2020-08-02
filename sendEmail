@@ -61,11 +61,11 @@ my %conf = (
     
     ## Network
     "server"               => 'localhost',                         ## Default SMTP server
-    "port"                 => 25,                                  ## Default port
+    "port"                 => 587,                                 ## Default port
     "bindaddr"             => '',                                  ## Default local bind address
     "alarm"                => '',                                  ## Default timeout for connects and reads, this gets set from $opt{'timeout'}
-    "tls_client"           => 0,                                   ## If TLS is supported by the client (us)
-    "tls_server"           => 0,                                   ## If TLS is supported by the remote SMTP server
+    "tls_client"           => 1,                                   ## If TLS is supported by the client (us)
+    "tls_server"           => 1,                                   ## If TLS is supported by the remote SMTP server
     
     ## Email
     "delimiter"            => "----MIME delimiter for sendEmail-"  ## MIME Delimiter
@@ -1903,7 +1903,12 @@ else {
     if ($conf{'tls_server'} == 1 and $conf{'tls_client'} == 1 and $opt{'tls'} =~ /^(yes|auto)$/) {
         printmsg("DEBUG => Starting TLS", 2);
         if (SMTPchat('STARTTLS')) { quit($conf{'error'}, 1); }
-        if (! IO::Socket::SSL->start_SSL($SERVER, SSL_version => 'SSLv3 TLSv1')) {
+        # original code not working because IO:SSL now requires SSL parameters
+        #if (! IO::Socket::SSL->start_SSL($SERVER, SSL_version => 'SSLv3 TLSv1')) {
+        # disable ssl verify mode (does not veryfy trusted certs, INSECURE as it allows man in the middle attacks)
+        #if (! IO::Socket::SSL->start_SSL($SERVER, SSL_version => 'TLSv1', SSL_verify_mode => 'SSL_VERIFY_NONE' )) {
+        # force tlsv1 and pass the location of the CA bundle
+        if (! IO::Socket::SSL->start_SSL($SERVER, SSL_version => 'TLSv1', SSL_cert_file => '/etc/pki/tls/certs/ca-bundle.crt' )) {
             quit("ERROR => TLS setup failed: " . IO::Socket::SSL::errstr(), 1);
         }
         printmsg("DEBUG => TLS: Using cipher: ". $SERVER->get_cipher(), 3);
