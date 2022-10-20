@@ -4,6 +4,7 @@ sendemail (1.56-6) UNRELEASED; urgency=medium
   * Use secure copyright file specification URI.
   * Bump debhelper from deprecated 9 to 13.
   * Set debhelper-compat version in Build-Depends.
+  * Use secure URI in Vcs control header Vcs-Git.
 
  -- Debian Janitor <janitor@jelmer.uk>  Thu, 20 Oct 2022 09:46:16 -0000
 

@@ -5,7 +5,7 @@ Maintainer: Alejandro Garrido Mota <alejandro@debian.org>
 Build-Depends: debhelper-compat (= 13)
 Standards-Version: 3.9.4
 Homepage: http://www.caspian.dotconf.net/menu/Software/SendEmail/
-Vcs-Git: git://github.com/mogaal/sendemail.git
+Vcs-Git: https://github.com/mogaal/sendemail.git
 Vcs-Browser: https://github.com/mogaal/sendemail
 
 Package: sendemail
