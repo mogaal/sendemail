@@ -6,7 +6,7 @@ Upstream-Name: sendemail
 Files: *
 Copyright: 2000, Brandon Zehm <caspian@dotconf.net>
 License: GPL-2+
-X-Comment: Per the Berne Convention, the author is assumed to be the copyright
+Comment: Per the Berne Convention, the author is assumed to be the copyright
  holder. Years of copyright are deduced from the CHANGELOG file.
 
 Files: debian/*

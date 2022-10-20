@@ -5,6 +5,7 @@ sendemail (1.56-6) UNRELEASED; urgency=medium
   * Bump debhelper from deprecated 9 to 13.
   * Set debhelper-compat version in Build-Depends.
   * Use secure URI in Vcs control header Vcs-Git.
+  * Fix field name typo in debian/copyright (X-Comment => Comment).
 
  -- Debian Janitor <janitor@jelmer.uk>  Thu, 20 Oct 2022 09:46:16 -0000
 
