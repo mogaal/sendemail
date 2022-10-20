@@ -6,6 +6,7 @@ sendemail (1.56-6) UNRELEASED; urgency=medium
   * Set debhelper-compat version in Build-Depends.
   * Use secure URI in Vcs control header Vcs-Git.
   * Fix field name typo in debian/copyright (X-Comment => Comment).
+  * Fix day-of-week for changelog entries 1.56-4, 1.56-3, 1.56-1.
 
  -- Debian Janitor <janitor@jelmer.uk>  Thu, 20 Oct 2022 09:46:16 -0000
 
@@ -19,7 +20,7 @@ sendemail (1.56-4) unstable; urgency=low
 
   * Upload to unstable
 
- -- Alejandro Garrido Mota <alejandro@debian.org>  Fri, 23 May 2013 10:10:06 -0430
+ -- Alejandro Garrido Mota <alejandro@debian.org>  Thu, 23 May 2013 10:10:06 -0430
 
 sendemail (1.56-3) experimental; urgency=low
 
@@ -34,7 +35,7 @@ sendemail (1.56-3) experimental; urgency=low
      - Update copyright dates.
   * Update d/compat file to dh9.
 
- -- Alejandro Garrido Mota <alejandro@debian.org>  Thu, 03 Mar 2013 11:00:23 -0430
+ -- Alejandro Garrido Mota <alejandro@debian.org>  Sun, 03 Mar 2013 11:00:23 -0430
 
 sendemail (1.56-2) unstable; urgency=low
 
@@ -61,7 +62,7 @@ sendemail (1.56-1) unstable; urgency=low
   * Add ${misc:Depends} in Depends field
   * Add sendemail.links, sendemail.manpages and sendemail.install
 
- -- Alejandro Garrido Mota <garridomota@gmail.com>  Sun, 3 Oct 2009 14:18:52 -0430
+ -- Alejandro Garrido Mota <garridomota@gmail.com>  Sat, 03 Oct 2009 14:18:52 -0430
 
 sendemail (1.55-3) unstable; urgency=low
 
