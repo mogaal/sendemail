@@ -2,6 +2,7 @@ sendemail (1.56-6) UNRELEASED; urgency=medium
 
   * Trim trailing whitespace.
   * Use secure copyright file specification URI.
+  * Bump debhelper from deprecated 9 to 13.
 
  -- Debian Janitor <janitor@jelmer.uk>  Thu, 20 Oct 2022 09:46:16 -0000
 
