@@ -1,4 +1,4 @@
-Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Contact: Brandon Zehm <caspian@dotconf.net>
 Source: http://caspian.dotconf.net/menu/Software/SendEmail/
 Upstream-Name: sendemail
@@ -6,7 +6,7 @@ Upstream-Name: sendemail
 Files: *
 Copyright: 2000, Brandon Zehm <caspian@dotconf.net>
 License: GPL-2+
-X-Comment: Per the Berne Convention, the author is assumed to be the copyright
+Comment: Per the Berne Convention, the author is assumed to be the copyright
  holder. Years of copyright are deduced from the CHANGELOG file.
 
 Files: debian/*

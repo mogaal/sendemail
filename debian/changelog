@@ -1,3 +1,15 @@
+sendemail (1.56-6) UNRELEASED; urgency=medium
+
+  * Trim trailing whitespace.
+  * Use secure copyright file specification URI.
+  * Bump debhelper from deprecated 9 to 13.
+  * Set debhelper-compat version in Build-Depends.
+  * Use secure URI in Vcs control header Vcs-Git.
+  * Fix field name typo in debian/copyright (X-Comment => Comment).
+  * Fix day-of-week for changelog entries 1.56-4, 1.56-3, 1.56-1.
+
+ -- Debian Janitor <janitor@jelmer.uk>  Thu, 20 Oct 2022 09:46:16 -0000
+
 sendemail (1.56-5) unstable; urgency=low
 
   * Add local-sendmail.patch. Thanks to Olivier Mehani <shtrom@ssji.net>.
@@ -6,14 +18,14 @@ sendemail (1.56-5) unstable; urgency=low
 
 sendemail (1.56-4) unstable; urgency=low
 
-  * Upload to unstable 
+  * Upload to unstable
 
- -- Alejandro Garrido Mota <alejandro@debian.org>  Fri, 23 May 2013 10:10:06 -0430
+ -- Alejandro Garrido Mota <alejandro@debian.org>  Thu, 23 May 2013 10:10:06 -0430
 
 sendemail (1.56-3) experimental; urgency=low
 
   * Add patch to fix fails when tls is enabled (Closes: #679911).
-  * d/control: 
+  * d/control:
      - Update Standards-Version field to 3.9.4.
      - Add Vcs-Git and Vcs-Browser field.
      - Replace debhelper version in B-D
@@ -23,13 +35,13 @@ sendemail (1.56-3) experimental; urgency=low
      - Update copyright dates.
   * Update d/compat file to dh9.
 
- -- Alejandro Garrido Mota <alejandro@debian.org>  Thu, 03 Mar 2013 11:00:23 -0430
+ -- Alejandro Garrido Mota <alejandro@debian.org>  Sun, 03 Mar 2013 11:00:23 -0430
 
 sendemail (1.56-2) unstable; urgency=low
 
   * Remove DH_VERBOSE in d/rules
   * Add IPV6 support (Closes: #591920)
-  * Update Standards-Version field  
+  * Update Standards-Version field
   * Fix d/watch file
   * Update d/copyright to dep5
   * Update debhelper version to '(>= 7.0.50~)' in Build-Depends field
@@ -44,13 +56,13 @@ sendemail (1.56-1) unstable; urgency=low
 
   * New upstream release (Closes: #521894)
   * Update Standards-Version to 3.8.3
-  * Add watch file 
+  * Add watch file
   * Implemented dh7
   * Rename "docs" file to "sendemail.docs"
   * Add ${misc:Depends} in Depends field
   * Add sendemail.links, sendemail.manpages and sendemail.install
-  
- -- Alejandro Garrido Mota <garridomota@gmail.com>  Sun, 3 Oct 2009 14:18:52 -0430
+
+ -- Alejandro Garrido Mota <garridomota@gmail.com>  Sat, 03 Oct 2009 14:18:52 -0430
 
 sendemail (1.55-3) unstable; urgency=low
 
@@ -78,7 +90,7 @@ sendemail (1.55-2) unstable; urgency=low
  -- Alejandro Garrido Mota <garridomota@gmail.com>  Sun, 14 Dec 2008 23:00:42 -0430
 
 sendemail (1.55-1) unstable; urgency=low
-   
+
   * new upstream version
   * A new mantainer (Closes: #391413)
 
@@ -110,4 +122,3 @@ sendemail (1.52-1) unstable; urgency=low
   * Initial Release (Closes: #295288).
 
  -- David Moreno Garza <damog@damog.net>  Mon, 28 Feb 2005 16:11:57 -0600
-
